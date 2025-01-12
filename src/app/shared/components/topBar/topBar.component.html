@@ -23,11 +23,7 @@
               [routerLink]="['/profiles', data.currentUser.username]"
               class="nav-link"
             >
-              <img
-                [src]="data.currentUser.image"
-                class="user-pic"
-                alt="user image"
-              />
+              <img [src]="data.currentUser.image" class="user-pic" />
               {{ data.currentUser.username }}
             </a>
           </li>

@@ -9,6 +9,7 @@ import { of } from 'rxjs';
 import { HttpErrorResponse } from '@angular/common/http';
 import { PersistanceService } from '../../../shared/services/persistance.service';
 import { Router } from '@angular/router';
+import { tap } from 'rxjs/operators';
 
 export const registerEffect = createEffect(
   (
@@ -125,4 +126,49 @@ export const redirectAfterLoginEffect = createEffect(
     );
   },
   { dispatch: false, functional: true }
+);
+
+export const updateCurrentUserEffect = createEffect(
+  (
+    actions$ = inject(Actions),
+    authService = inject(AuthService),
+    persistanceService = inject(PersistanceService)
+  ) => {
+    return actions$.pipe(
+      ofType(authActions.updateCurrentUser),
+      switchMap(({ currentUserRequest }) => {
+        return authService.updateCurrentUser(currentUserRequest).pipe(
+          map((currentUser: currentUserInterface) => {
+            persistanceService.set('accessToken', currentUser.token);
+            return authActions.updateCurrentUserSuccess({ currentUser });
+          }),
+          catchError((errorResponse: HttpErrorResponse) => {
+            return of(
+              authActions.updateCurrentUserFailure({
+                errors: errorResponse.error.errors,
+              })
+            );
+          })
+        );
+      })
+    );
+  },
+  { functional: true }
+);
+
+export const logoutEffect = createEffect(
+  (
+    actions$ = inject(Actions),
+    router = inject(Router),
+    persistanceService = inject(PersistanceService)
+  ) => {
+    return actions$.pipe(
+      ofType(authActions.logout),
+      tap(() => {
+        persistanceService.set('accessToken', '');
+        router.navigateByUrl('/');
+      })
+    );
+  },
+  { functional: true, dispatch: false }
 );
